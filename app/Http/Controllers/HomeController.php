@@ -27,16 +27,22 @@ class HomeController extends Controller
     public function index()
     {
         if (Auth::check()) {
-            return view('home');
+            $users = User::all();
+            return view('home', compact('users'));
         }else {
             return view('login');
         }
-
     }
 
     public function getRegister(Request $request)
     {
         return view('register');
+    }
+
+    public function postDelete($name, $id)
+    {
+        User::find($id)->delete();
+        return redirect('home')->with('success','Information has been  deleted');
     }
 
     public function postRegister(UserRequest $request)
