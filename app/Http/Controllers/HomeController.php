@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\User as UserRequest;
+//use App\Http\Requests\User as UserRequest;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
+use App\Rules\CheckConfirmPasswordRule;
 
 class HomeController extends Controller
 {
@@ -22,7 +22,8 @@ class HomeController extends Controller
 
     public function index()
     {
-        dd(123);
+        $users = User::all();
+        return view('home', compact('users'));
     }
 
     public function getRegister(Request $request)
@@ -87,9 +88,19 @@ class HomeController extends Controller
         return $this->index();
     }
 
-    public function postRegister(UserRequest $request)
+    public function postRegister(Request $request)
     {
-        $validated = $request->validated();
+//        dd($request);
+        $validated = $request->validate([
+            'email' => 'required',
+            'username' => 'required',
+            'password' => [
+                'required',
+                new CheckConfirmPasswordRule($request)
+            ],
+            'password_confirmation' => 'required',
+        ]);
+
         $validated['password'] =  bcrypt($validated['password']);
         if(User::create($validated)){
             return redirect()->route('home');
