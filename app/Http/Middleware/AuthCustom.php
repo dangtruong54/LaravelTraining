@@ -18,19 +18,20 @@ class AuthCustom
      */
     public function handle($request, Closure $next, $guard)
     {
-        dd($guard);
         switch ($guard) {
             case 'web':
+                if(!Auth::guard($guard)->check()) {
+                    return redirect()->route('login');
+                }
                 break;
             case 'web1':
+                if(!Auth::guard($guard)->check()) {
+                    return redirect()->route('login2');
+                }
                 break;
             default:
+                return redirect()->route('login');
                 break;
-        }
-
-
-        if (Auth::guard($guard)->check()) {
-            return redirect()->route('login');
         }
         return $next($request);
     }

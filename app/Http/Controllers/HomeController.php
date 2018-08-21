@@ -21,7 +21,7 @@ class HomeController extends Controller
 
     public function index()
     {
-        $users = User::paginate(2);
+        $users = User::all();
         return view('home', ['users' => $users]);
     }
 
@@ -43,10 +43,9 @@ class HomeController extends Controller
         ]);
 
         $remember = $request->get('remember');
-//        $credentials = $request->only('email', 'password');
 
         if (Auth::guard('web')->attempt(['email' => $request->email, 'password' => $request->password], $remember)) {
-            //Authentication passed...
+            $request->session()->put('email_login', $request->email);
             return redirect()->intended(route('user.home'));
         }
 
@@ -56,14 +55,14 @@ class HomeController extends Controller
 
     public function getLogout(Request $request)
     {
-        Auth::logout();
-        return redirect()->intended('login');
+        Auth::guard('web')->logout();
+        return redirect()->route('login');
     }
 
     public function postDelete($id)
     {
         User::find($id)->delete();
-        return redirect('home')->with('success', 'Information has been  deleted');
+        return redirect()->intended(route('user.home'))->with('success', 'Information has been  deleted');
     }
 
     public function getEdit($id)
@@ -88,7 +87,6 @@ class HomeController extends Controller
 
     public function postRegister(Request $request)
     {
-//        dd($request);
         $validated = $request->validate([
             'email' => 'required',
             'username' => 'required',
@@ -103,7 +101,7 @@ class HomeController extends Controller
 
 
         if (User::create($validated)) {
-            return redirect()->route('home');
+            return redirect()->route('user.home');
         } else {
             dd($request);
         }

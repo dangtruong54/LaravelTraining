@@ -14,17 +14,27 @@
 Route::get('/', function () {
     return view('welcome');
 });
-Route::resource('passports','PassportController');
-Route::resource('users', 'UserController');
+//Route::resource('passports','PassportController');
+//Route::resource('users', 'UserController');
 
 Auth::routes();
 Route::group(['prefix' => 'user', 'middleware' => ['auth_custom:web']], function () {
     Route::get('/home', 'HomeController@index')->name('user.home');
     Route::get('/logout', 'HomeController@getLogout')->name('user.logout');
-    Route::post('/user/delete/{id}', 'HomeController@postDelete')->name('user.postDelete');
-    Route::get('/user/edit/{id}', 'HomeController@getEdit')->name('user.getEdit');
-    Route::post('/user/edit/{id}', 'HomeController@postEdit')->name('user.postEdit');
-    Route::get('/user/search/{name}', 'HomeController@getSearch')->name('user.getSearch');
+    Route::post('/delete/{id}', 'HomeController@postDelete')->name('user.postDelete');
+    Route::get('/edit/{id}', 'HomeController@getEdit')->name('user.getEdit');
+    Route::post('/edit/{id}', 'HomeController@postEdit')->name('user.postEdit');
+    Route::get('/search/{name}', 'HomeController@getSearch')->name('user.getSearch');
+});
+
+Route::group(['prefix' => 'posts', 'middleware' => ['auth_custom:web']], function () {
+    Route::get('/index', 'PostsController@getAllPost')->name('post.getAllPost');
+    Route::get('/create', 'PostsController@getCreatePost')->name('get.createPost');
+    Route::post('/create', 'PostsController@postCreatePost')->name('post.createPost');
+    Route::post('/delete/{id}', 'PostsController@postDeletePost')->name('post.deletePost');
+    Route::get('/edit/{id}', 'PostsController@getEditPost')->name('get.editPost');
+    Route::post('/edit/{id}', 'PostsController@postEditPost')->name('post.editPost');
+
 });
 
 Route::group(['middleware' => ['auth_custom:web1', 'a', 'b']], function () {

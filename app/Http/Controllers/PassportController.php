@@ -83,8 +83,6 @@ class PassportController extends Controller
             $file = $request->file('filename');
             $name=time().$file->getClientOriginalName();
             $file->move(public_path().'/images/', $name);
-        }else {
-
         }
         $passport= \App\Passport::find($id);
         $passport->name=$request->get('name');
