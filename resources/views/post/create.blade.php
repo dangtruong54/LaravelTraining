@@ -13,7 +13,12 @@
   <body>
 
     <div class="container">
-      <h2>Add New Post</h2><br/>
+      <h2>@if(!isset($post))
+            Add New Post
+          @else
+            Edit Post
+          @endif
+      </h2><br/>
       <h3><a href="{{route('post.getAllPost')}}">Back</a></h3>
       <form method="post" action="{{(isset($post['id']) && $post['id'] !== "") ? route('post.editPost', $post['id']) :route('post.createPost')}}" enctype="multipart/form-data">
 @csrf
@@ -35,8 +40,9 @@
     <div class="form-group col-md-4">
         <input type="file" name="filename">
         @if((isset($post) && $post['filename'] !== ""))
-            <img src="{{URL::asset('/images') . '/' . $post->filename}}" alt="{{$post['title']}}">
+            <img name="image-thumbnail" src="{{URL::asset('/images/thumbnail') . '/' . $post->filename}}" alt="{{$post['title']}}" style="max-width: 300px">
         @endif
+        <span class="text-danger">{{ $errors->first('filename') }}</span>
     </div>
 </div>
 <div class="row">

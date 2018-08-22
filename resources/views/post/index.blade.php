@@ -6,6 +6,9 @@
     <title>Index Page</title>
     <link rel="stylesheet" href="{{asset('css/app.css')}}">
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
+    <script src="js/jquery.js" type="text/javascript" charset="utf-8"></script>
+    <link rel="stylesheet" href="css/prettyPhoto.css" type="text/css" media="screen" charset="utf-8" />
+    <script src="js/jquery.prettyPhoto.js" type="text/javascript" charset="utf-8"></script>
 </head>
 <body>
 <div class="container">
@@ -37,7 +40,9 @@
                 <td>{{$item_post['id']}}</td>
                 <td><a href="{{route('get.editPost', $item_post['id'])}}">{{$item_post['title']}}</a></td>
                 <td width="200px">
-                    <img class="img-fluid" src="{{URL::asset('/images') . '/' . $item_post->filename}}"/>
+                    <a href="{{URL::asset('/storage/app/originals') . '/' . $item_post->filename}}" rel="prettyPhoto" title="This is the description">
+                        <img class="img-fluid" src="{{URL::asset('/images/thumbnail') . '/' . $item_post->filename}}"/>
+                    </a>
                 </td>
                 <td>{{$date}}</td>
                 {{--<td> {!!$item_post['content']!!}</td>--}}
@@ -59,5 +64,10 @@
         {{ $listPosts->links() }}
     </nav>
 </div>
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function(){
+        $("a[rel^='prettyPhoto']").prettyPhoto();
+    });
+</script>
 </body>
 </html>
