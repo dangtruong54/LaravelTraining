@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-//use App\Http\Requests\User as UserRequest;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,8 +21,8 @@ class HomeController extends Controller
 
     public function index()
     {
-        $users = User::all();
-        return view('home', compact('users'));
+        $users = User::paginate(2);
+        return view('home', ['users' => $users]);
     }
 
     public function getRegister(Request $request)
@@ -46,10 +45,9 @@ class HomeController extends Controller
         $remember = $request->get('remember');
 //        $credentials = $request->only('email', 'password');
 
-        if(Auth::attempt(['email' => $request->email, 'password' => $request->password], $remember))
-        {
+        if (Auth::guard('web')->attempt(['email' => $request->email, 'password' => $request->password], $remember)) {
             //Authentication passed...
-            return redirect()->intended('home');
+            return redirect()->intended(route('user.home'));
         }
 
         return back()->withInput()->with('message', 'Login Failed');
@@ -65,13 +63,13 @@ class HomeController extends Controller
     public function postDelete($id)
     {
         User::find($id)->delete();
-        return redirect('home')->with('success','Information has been  deleted');
+        return redirect('home')->with('success', 'Information has been  deleted');
     }
 
     public function getEdit($id)
     {
         $user = User::find($id);
-        return view('user_edit',compact('user'));
+        return view('user_edit', compact('user'));
     }
 
     public function postEdit(Request $request, $id)
@@ -101,11 +99,27 @@ class HomeController extends Controller
             'password_confirmation' => 'required',
         ]);
 
-        $validated['password'] =  bcrypt($validated['password']);
-        if(User::create($validated)){
+        $validated['password'] = bcrypt($validated['password']);
+
+
+        if (User::create($validated)) {
             return redirect()->route('home');
-        }else{
+        } else {
             dd($request);
         }
+    }
+
+    public function getSearch()
+    {
+
+    }
+
+    public function postSearch(Request $request)
+    {
+        $name = $request->get('name');
+        $users = User::where('username', 'like', '%' . $name . '%')
+            ->limit(3)
+            ->get();
+        return $users;
     }
 }

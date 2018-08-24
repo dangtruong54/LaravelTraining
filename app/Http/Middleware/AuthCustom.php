@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Middleware;
-use App\User;
+
 use Illuminate\Support\Facades\Auth;
 
 use Closure;
@@ -11,13 +11,25 @@ class AuthCustom
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
+     * @param $request
+     * @param Closure $next
+     * @param mixed ...$guards
+     * @return \Illuminate\Http\RedirectResponse|mixed
      */
-    public function handle($request, Closure $next)
+    public function handle($request, Closure $next, $guard)
     {
-        if (!Auth::check()) {
+        dd($guard);
+        switch ($guard) {
+            case 'web':
+                break;
+            case 'web1':
+                break;
+            default:
+                break;
+        }
+
+
+        if (Auth::guard($guard)->check()) {
             return redirect()->route('login');
         }
         return $next($request);

@@ -18,12 +18,23 @@ Route::resource('passports','PassportController');
 Route::resource('users', 'UserController');
 
 Auth::routes();
-Route::group(['middleware' => 'auth_custom'], function () {
-    Route::get('/home', 'HomeController@index')->name('home');
-    Route::get('/logout', 'HomeController@getLogout')->name('logout');
+Route::group(['prefix' => 'user', 'middleware' => ['auth_custom:web']], function () {
+    Route::get('/home', 'HomeController@index')->name('user.home');
+    Route::get('/logout', 'HomeController@getLogout')->name('user.logout');
     Route::post('/user/delete/{id}', 'HomeController@postDelete')->name('user.postDelete');
     Route::get('/user/edit/{id}', 'HomeController@getEdit')->name('user.getEdit');
     Route::post('/user/edit/{id}', 'HomeController@postEdit')->name('user.postEdit');
+    Route::get('/user/search/{name}', 'HomeController@getSearch')->name('user.getSearch');
+});
+
+Route::group(['middleware' => ['auth_custom:web1', 'a', 'b']], function () {
+    Route::group(['prefix' => 'user1'], function () {
+        Route::get('/home', 'HomeController@index')->name('user1.home');
+        Route::get('/logout', 'HomeController@getLogout')->name('user1.logout');
+        Route::post('/user/delete/{id}', 'HomeController@postDelete')->name('user1.postDelete');
+        Route::get('/user/edit/{id}', 'HomeController@getEdit')->name('user1.getEdit');
+        Route::post('/user/edit/{id}', 'HomeController@postEdit')->name('user1.postEdit');
+    });
 });
 
 Route::group(['middleware' => 'guest'], function () {
@@ -31,6 +42,9 @@ Route::group(['middleware' => 'guest'], function () {
     Route::post('/register', 'HomeController@postRegister')->name('post.register');
     Route::get('/login', 'HomeController@getLogin')->name('login');
     Route::post('/login', 'HomeController@postLogin')->name('post.login');
+    Route::get('/login2', 'Users2Controller@getLogin')->name('login2');
+    Route::post('/login2', 'Users2Controller@postLogin')->name('post.login2');
 });
 
+Route::post('/user/search', 'HomeController@postSearch')->name('user.postSearch');
 

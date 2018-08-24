@@ -40,6 +40,12 @@
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ml-auto">
                         <!-- Authentication Links -->
+                        <form class="form-inline form-search-home mt-4 mt-md-0">
+                            {!! csrf_field() !!}
+                            <input id="name_search" class="form-control mr-sm-2 form-search-name" type="text" placeholder="Name" aria-label="Search">
+                            {{--<button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>--}}
+                        </form>
+                        <div id="result-search" style="position: absolute;top: 50px; z-index: 99;"></div>
                         @guest
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
@@ -73,5 +79,41 @@
             @yield('content')
         </main>
     </div>
+    <script src="http://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script>
+        jQuery(document).ready(function(){
+            jQuery('#name_search').keyup(function(e){
+                e.preventDefault();
+                $('#result-search').html('');
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
+                    }
+                });
+                var name = jQuery('#name_search').val();
+                if(name.length > 0)
+                {
+                    jQuery.ajax({
+                        url: "{{ route('user.postSearch') }}",
+                        method: 'post',
+                        data: {
+                            name: name,
+                            _token: '{{csrf_token()}}'
+                        },
+                        success: function(result){
+                            var $html = '';
+                            if(result.length > 0)
+                            {
+                                $(result).each(function (index, value) {
+                                    $html += '<p>' + value['username'] +'</p>';
+                                })
+                                $('#result-search').append($html);
+                            }
+                        }}
+                    );
+                }
+            });
+        });
+    </script>
 </body>
 </html>
