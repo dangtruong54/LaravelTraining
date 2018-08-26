@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
-use Image;
-use \Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
-use App\Post as Post;
+use DB;
+use \Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+
+use App\Post as Post;
+use App\Upload\Upload;
 
 class PostsController extends Controller
 {
@@ -15,7 +16,7 @@ class PostsController extends Controller
     public function getAllPost()
     {
         $user = auth('web')->user();
-        $listPosts = (new Post())->where('user_id', $user->id)->orderBy('created_at','DESC')->paginate('2');
+        $listPosts = (new Post())->where('user_id', $user->id)->orderBy('created_at', 'DESC')->paginate('4');
         return view('post.index', ['listPosts' => $listPosts]);
     }
 
@@ -27,25 +28,39 @@ class PostsController extends Controller
     public function postCreatePost(Request $request)
     {
 
-        $data = $request->all();
-//        dd($data);
-        $validated = $this->validateRule($request);
+        DB::beginTransaction();
+        try {
 
-        if($validated == null){
-            $originalImage = $data['filename'];
-            $originalImageName = time() . $originalImage->getClientOriginalName();
-            $this->uploadImage($request, $originalImageName);
+            $data = $request->all();
 
-            $post= new Post();
-            $post->user_id = Auth::id();
-            $post->title = $data['title'];
-            $post->content = $data['content'];
-            $post->filename = $originalImageName;
-            $date=date_create($data['date']);
-            $format = date_format($date,"Y-m-d");
-            $post->created_at = strtotime($format);
-            $post->save();
-            return redirect()->intended(route('post.getAllPost'))->with('success','Information has been Save');
+            $validated = $this->validateRule($request);
+
+            if ($validated == null) {
+                if ($request->hasFile('filename')) {
+                    $originalImage = $data['filename'];
+                    $originalImageName = time() . $originalImage->getClientOriginalName();
+                    new Upload($request, $originalImageName, 'origin');
+                    new Upload($request, $originalImageName, 'thumbnail');
+                }
+                $post = new Post();
+                $post->user_id = Auth::id();
+                $post->title = $data['title'];
+                $post->content = $data['content'];
+                $post->filename = $originalImageName;
+                $date = date_create($data['date']);
+                $format = date_format($date, "Y-m-d");
+                $post->created_at = strtotime($format);
+                $post->save();
+                DB::commit();
+                return redirect()->intended(route('post.getAllPost'))->with('success', 'Information has been Save');
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if ($request->hasFile('filename'))
+            {
+                Storage::delete('/images/originals/'. $request->get('filename'));
+                Storage::delete('/images/thumbnails/'. $request->get('filename'));
+            }
         }
     }
 
@@ -59,88 +74,65 @@ class PostsController extends Controller
     {
 
         $data = $request->all();
-//        dd($data);
         $post = Post::find($id);
-        $post->title = $data['title'];
-        $post->content = $data['content'];
-        $path = [];
-        if($request->hasFile('filename')){
-            $originalImage = $data['filename'];
-            $validated = $this->validateRule($request);
-            if(Post::created($validated) == null) {
-                $originalImageName = time() . $originalImage->getClientOriginalName();
-                $path = $this->uploadImage($request, $originalImageName);
-                $post->filename = $originalImageName;
-            }
-        }
+
         DB::beginTransaction();
         try {
+            $pathImageOrigin = null;
+            $pathImageThumbnail = null;
+            $post->title = $data['title'];
+            $post->content = $data['content'];
+            if ($request->hasFile('filename')) {
+                $originalImage = $data['filename'];
+                $validated = $this->validateRule($request);
+                if ($validated == null) {
+                    $originalImageName = time() . $originalImage->getClientOriginalName();
+                    new Upload($request, $originalImageName, 'origin');
+                    new Upload($request, $originalImageName, 'thumbnail');
+
+                    Storage::delete('/images/originals/'. $post->filename);
+                    Storage::delete('/images/thumbnails/'. $post->filename);
+                    $post->filename = $originalImageName;
+                }
+            }
+
             $date = date_create($data['date']);
-            $format = date_format($date,"Y-m-d");
+            $format = date_format($date, "Y-m-d");
             $post->created_at = strtotime($format);
             $post->save();
             DB::commit();
+            return redirect()->intended(route('post.getAllPost'))->with('success', 'Information has been Save');
         } catch (\Exception $e) {
             DB::rollBack();
-            Storage::delete($path);
+            Storage::delete('/images/originals/'. $request->get('filename'));
+            Storage::delete('/images/thumbnails/'. $request->get('filename'));
         }
-
-        return redirect()->intended(route('post.getAllPost'))->with('success','Information has been Save');
-
     }
 
     public function postDeletePost($id)
     {
-        Post::find($id)->delete();
-        return redirect()->intended(route('post.getAllPost'))->with('success','Information has been  deleted');
+        DB::beginTransaction();
+        try {
+            Post::find($id)->delete();
+            DB::commit();
+            return redirect()->intended(route('post.getAllPost'))->with('success', 'Information has been  deleted');
+        } catch (\Exception $e) {
+            DB::rollBack();
+        }
     }
 
     public function validateRule($request)
     {
-
         $data = [
-            'filename' => 'required|file|mimes:jpeg,png,jpg,gif|max:2048'
+            'title' => 'required',
+            'content' => 'required',
+            'filename' => 'file|mimes:jpeg,png,jpg,gif|max:2048'
         ];
         $messages = [
             'max'    => 'The :attribute size is larger than 2M',
         ];
-
         $this->validate($request, $data, $messages);
     }
-
-
-
-    public function uploadImage($request, $originalImageName){
-
-        //========== Save image origin ========//
-        $content = file_get_contents($request->file('filename'));
-
-        $request->file('filename')->storeAs('originals', $originalImageName );
-        Storage::delete($originalImageName);
-
-        //========== Save image thumbnail ========//
-        $originalImage = $request->file('filename');
-        $this->createImageThumbnail($originalImage, $originalImageName);
-        return ['originals/' .$originalImageName, 'dsadsadsa'];
-    }
-
-    public function createImageThumbnail($originalImage, $originalImageName)
-    {
-        $sizeImageOrigin = getimagesize($originalImage);
-        $widthImageOrigin = $sizeImageOrigin[0];
-        $heightImageOrigin = $sizeImageOrigin[1];
-        $ratio = $widthImageOrigin/$heightImageOrigin;
-        $thumbnailImage = Image::make($originalImage);
-
-        if($ratio >= 1)
-        {
-            $thumbnailImage->resize(150, 150 * 1/$ratio);
-        }else {
-            $thumbnailImage->resize(150 * $ratio,150);
-        }
-        $destinationPath = public_path('images/thumbnail');
-        $thumbnailImage->save($destinationPath . '/' . $originalImageName);
-
-    }
-
 }
+
+

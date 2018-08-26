@@ -6,9 +6,9 @@
     <title>Index Page</title>
     <link rel="stylesheet" href="{{asset('css/app.css')}}">
     <link rel="stylesheet" href="{{asset('css/style.css')}}">
-    <script src="js/jquery.js" type="text/javascript" charset="utf-8"></script>
-    <link rel="stylesheet" href="css/prettyPhoto.css" type="text/css" media="screen" charset="utf-8" />
-    <script src="js/jquery.prettyPhoto.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{asset('js/jquery.js')}}" type="text/javascript" charset="utf-8"></script>
+    <link rel="stylesheet" href="{{asset('css/prettyPhoto.css')}}" type="text/css" media="screen" charset="utf-8" />
+    <script src="{{asset('js/jquery.prettyPhoto.js')}}" type="text/javascript" charset="utf-8"></script>
 </head>
 <body>
 <div class="container">
@@ -40,16 +40,15 @@
                 <td>{{$item_post['id']}}</td>
                 <td><a href="{{route('get.editPost', $item_post['id'])}}">{{$item_post['title']}}</a></td>
                 <td width="200px">
-                    <a href="{{URL::asset('/storage/app/originals') . '/' . $item_post->filename}}" rel="prettyPhoto" title="This is the description">
-                        <img class="img-fluid" src="{{URL::asset('/images/thumbnail') . '/' . $item_post->filename}}"/>
+                    <a href="{{('http://img.domain/app/images/originals') . '/' . $item_post->filename}}" rel="prettyPhoto" title="This is the description">
+                        <img class="img-fluid" src="{{('http://img.domain/app/images/thumbnails') . '/' . $item_post->filename}}"/>
                     </a>
                 </td>
                 <td>{{$date}}</td>
                 {{--<td> {!!$item_post['content']!!}</td>--}}
 
                 <td><a href="{{route('get.createPost')}}" class="btn btn-success">Add</a></td>
-                <td><a href="{{route('get.editPost', $item_post['id'])}}" class="btn btn-warning">Edit</a>
-                </td>
+                <td><a href="{{route('get.editPost', $item_post['id'])}}" class="btn btn-warning">Edit</a></td>
                 <td>
                     <form action="{{route('post.deletePost', $item_post['id'])}}" method="post">
                         @csrf

@@ -40,7 +40,9 @@
     <div class="form-group col-md-4">
         <input type="file" name="filename">
         @if((isset($post) && $post['filename'] !== ""))
-            <img name="image-thumbnail" src="{{URL::asset('/images/thumbnail') . '/' . $post->filename}}" alt="{{$post['title']}}" style="max-width: 300px">
+            <a href="{{('http://img.domain/app/images/originals') . '/' . $post->filename}}" rel="prettyPhoto" title="This is the description">
+                <img class="img-fluid" src="{{('http://img.domain/app/images/thumbnails') . '/' . $post->filename}}"/>
+            </a>
         @endif
         <span class="text-danger">{{ $errors->first('filename') }}</span>
     </div>
