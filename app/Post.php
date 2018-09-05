@@ -12,4 +12,8 @@ class Post extends Model
         'user_id', 'title', 'content', 'filename',
         'created_at',
     ];
+
+    public function user(){
+        return $this->hasOne('App\user', 'id', 'user_id');
+    }
 }

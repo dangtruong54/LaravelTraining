@@ -6,9 +6,6 @@ use \Illuminate\Support\Facades\Storage;
 
 class Upload
 {
-    private $request;
-    private $originalImageName;
-    private $check;
     /**
      * Upload constructor.
      */
@@ -44,6 +41,5 @@ class Upload
             $pathThumbnail = storage_path('app/images/thumbnails/'. $originalImageName);
             return $pathThumbnail;
         }
-
     }
 }

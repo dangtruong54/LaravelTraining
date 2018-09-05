@@ -11,8 +11,16 @@
     <script src="{{asset('js/jquery.prettyPhoto.js')}}" type="text/javascript" charset="utf-8"></script>
 </head>
 <body>
-<div class="container">
-    <h3><a href="{{route('post.getAllPost')}}">Home</a></h3>
+<div class="container" style="margin-top: 40px">
+    <div class="row">
+        <div class="col-md-6">
+            <h3><a href="{{route('post.getAllPost')}}">Home</a></h3>
+            <label>UserName: {{$userName}}</label>
+        </div>
+        <div class="col-md-2 offset-4">
+            <a href="{{route('get.createPost')}}" class="btn btn-success">Add New</a>
+        </div>
+    </div>
     <br />
     @if (\Session::has('success'))
         <div class="alert alert-success">
@@ -25,6 +33,7 @@
             <th>ID</th>
             <th>Title</th>
             <th>Image</th>
+            <th>User Name</th>
             <th>Date Create</th>
             {{--<th>Content</th>--}}
             <th colspan="2">Action</th>
@@ -44,10 +53,9 @@
                         <img class="img-fluid" src="{{('http://img.domain/app/images/thumbnails') . '/' . $item_post->filename}}"/>
                     </a>
                 </td>
+                <td>{{$item_post->user->username}}</td>
                 <td>{{$date}}</td>
                 {{--<td> {!!$item_post['content']!!}</td>--}}
-
-                <td><a href="{{route('get.createPost')}}" class="btn btn-success">Add</a></td>
                 <td><a href="{{route('get.editPost', $item_post['id'])}}" class="btn btn-warning">Edit</a></td>
                 <td>
                     <form action="{{route('post.deletePost', $item_post['id'])}}" method="post">

@@ -34,7 +34,11 @@ Route::group(['prefix' => 'posts', 'middleware' => ['auth_custom:web']], functio
     Route::post('/delete/{id}', 'PostsController@postDeletePost')->name('post.deletePost');
     Route::get('/edit/{id}', 'PostsController@getEditPost')->name('get.editPost');
     Route::post('/edit/{id}', 'PostsController@postEditPost')->name('post.editPost');
+});
 
+Route::group(['prefix' => 'upload', 'middleware' => ['auth_custom:web']], function () {
+    Route::get('/index', 'UploadController@getUpload')->name('get.getUpload');
+    Route::post('/index', 'UploadController@postUpload')->name('post.postUpload');
 });
 
 Route::group(['middleware' => ['auth_custom:web1', 'a', 'b']], function () {

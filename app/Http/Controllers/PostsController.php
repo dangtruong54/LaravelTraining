@@ -9,15 +9,30 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Post as Post;
 use App\Upload\Upload;
+use App\Validations\ImageValidator;
 
 class PostsController extends Controller
 {
+    protected $dataValidator;
     //
+    public function __construct(ImageValidator $imageValidator)
+    {
+        $this->dataValidator = $imageValidator;
+
+    }
+
     public function getAllPost()
     {
         $user = auth('web')->user();
-        $listPosts = (new Post())->where('user_id', $user->id)->orderBy('created_at', 'DESC')->paginate('4');
-        return view('post.index', ['listPosts' => $listPosts]);
+        $userName = $user->username;
+        //$listPosts = (new Post())->where('user_id', $user->id)->orderBy('created_at', 'DESC')->paginate('4');
+
+        $listPosts = (new Post())
+                        ->where('user_id', $user->id)
+                        ->with('user')
+                        ->orderBy('created_at', 'DESC')
+                        ->paginate('2');
+        return view('post.index', ['listPosts' => $listPosts, 'userName' => $userName]);
     }
 
     public function getCreatePost(Request $request)
@@ -33,9 +48,8 @@ class PostsController extends Controller
 
             $data = $request->all();
 
-            $validated = $this->validateRule($request);
-
-            if ($validated == null) {
+            $validated = $this->dataValidator->checkValidator($data, $this->dataValidator->addImage());
+            if (!$validated->fails()) {
                 if ($request->hasFile('filename')) {
                     $originalImage = $data['filename'];
                     $originalImageName = time() . $originalImage->getClientOriginalName();
@@ -53,6 +67,9 @@ class PostsController extends Controller
                 $post->save();
                 DB::commit();
                 return redirect()->intended(route('post.getAllPost'))->with('success', 'Information has been Save');
+            }else {
+                $errors = $validated->errors();
+                return view('post.create',  ['errors' => $errors]);
             }
         } catch (\Exception $e) {
             DB::rollBack();
@@ -78,34 +95,31 @@ class PostsController extends Controller
 
         DB::beginTransaction();
         try {
-            $pathImageOrigin = null;
-            $pathImageThumbnail = null;
             $post->title = $data['title'];
             $post->content = $data['content'];
             if ($request->hasFile('filename')) {
                 $originalImage = $data['filename'];
-                $validated = $this->validateRule($request);
-                if ($validated == null) {
-                    $originalImageName = time() . $originalImage->getClientOriginalName();
-                    new Upload($request, $originalImageName, 'origin');
-                    new Upload($request, $originalImageName, 'thumbnail');
+                $originalImageName = time() . $originalImage->getClientOriginalName();
+                new Upload($request, $originalImageName, 'origin');
+                new Upload($request, $originalImageName, 'thumbnail');
 
-                    Storage::delete('/images/originals/'. $post->filename);
-                    Storage::delete('/images/thumbnails/'. $post->filename);
-                    $post->filename = $originalImageName;
-                }
+                Storage::delete('/images/originals/'. $post->filename);
+                Storage::delete('/images/thumbnails/'. $post->filename);
+                $post->filename = $originalImageName;
             }
-
             $date = date_create($data['date']);
             $format = date_format($date, "Y-m-d");
             $post->created_at = strtotime($format);
             $post->save();
             DB::commit();
             return redirect()->intended(route('post.getAllPost'))->with('success', 'Information has been Save');
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Storage::delete('/images/originals/'. $request->get('filename'));
-            Storage::delete('/images/thumbnails/'. $request->get('filename'));
+            if ($request->hasFile('filename')) {
+                Storage::delete('/images/originals/' . $request->get('filename'));
+                Storage::delete('/images/thumbnails/' . $request->get('filename'));
+            }
         }
     }
 
@@ -119,19 +133,6 @@ class PostsController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
         }
-    }
-
-    public function validateRule($request)
-    {
-        $data = [
-            'title' => 'required',
-            'content' => 'required',
-            'filename' => 'file|mimes:jpeg,png,jpg,gif|max:2048'
-        ];
-        $messages = [
-            'max'    => 'The :attribute size is larger than 2M',
-        ];
-        $this->validate($request, $data, $messages);
     }
 }
 
