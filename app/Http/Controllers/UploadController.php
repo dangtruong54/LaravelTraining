@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
 use \Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\File;
 
 use Illuminate\Http\Request;
 use App\Validations\UploadValidator;
@@ -26,36 +27,42 @@ class UploadController extends Controller
 
     public function getUpload()
     {
-        $listImage = DB::table('upload')->paginate('3');
+        $listImage = DB::table('upload')->orderBy('created_at', 'desc')->paginate('3');
         return view('upload.index', ['listImage' => $listImage]);
     }
 
     public function postUpload(Request $request)
     {
-        dd($request->all());
+//        dd($request->all());
+        $arrImages = $request->get('image');
+        $errors = [];
+        $typeValidate = ["gif", "jpeg", "png", "jpg"];
         DB::beginTransaction();
         try {
-        if ($request->hasFile('filename')) {
-            $data = $request->all();
-            $validator = $this->validator->checkValidator($data, $this->validator->addImage());
-            $errors = $validator->errors();
-
-            if ($errors->messages()) {
-                return redirect()->route('get.getUpload')->with(['errors' => $errors]);
-            } else {
-                foreach ($data['filename'] as $key => $itemImage) {
-                    $image = new Upload();
-                    $fileName = time() . $itemImage->getClientOriginalName();
-                    $image->filename = $fileName;
-                    $image->save();
-                    $content = $itemImage;
-                    Storage::putFileAs('images/upload/', $content, $fileName);
-                    DB::commit();
+            if (isset($arrImages) && count($arrImages) > 0)
+            {
+                foreach ($arrImages as $key => $itemImage) {
+                    $sizeImage = (int) (strlen(rtrim($itemImage, '=')) * 3 / 4);
+                    $typeImage = str_replace(';', '', substr($itemImage, 11, 4));
+                    $fileName = time() . str_random(10) . '.' . $typeImage;
+                    if (in_array($typeImage, $typeValidate) > 0) {
+                        if ($sizeImage > 1048576) {
+                            array_push($errors, 'File ' . $key . ' is larger than 1MB!');
+                        } else {
+                            $image = new Upload();
+                            $image->filename = $fileName;
+                            $image->save();
+                            Storage::put($fileName, file_get_contents($itemImage));
+                            DB::commit();
+                        }
+                    } else {
+                        array_push($errors, 'File ' . $key . ' is not file image!');
+                    }
                 }
-                return  redirect()->route('get.getUpload');
             }
-        }
+            return redirect()->route('get.getUpload');
         } catch (\Exception $e) {
+            Storage::delete($fileName);
             DB::rollBack();
         }
     }
